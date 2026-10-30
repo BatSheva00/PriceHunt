@@ -1,23 +1,20 @@
+using Microsoft.EntityFrameworkCore;
+using PriceHunt.Api.Data;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+var connectionString = builder.Configuration.GetConnectionString("Default") ?? "Data Source=pricehunt.db";
+
+builder.Services.AddDbContext<PriceHuntDbContext>(options => options.UseSqlite(connectionString));
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+using (var scope = app.Services.CreateScope())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    var db = scope.ServiceProvider.GetRequiredService<PriceHuntDbContext>();
+    await db.Database.EnsureCreatedAsync();
 }
 
-app.UseHttpsRedirection();
-
-app.MapGet("/health", () => Results.Ok(new { status = "Healthy" }))
-    .WithName("GetHealth")
-    .WithOpenApi();
+app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 
 app.Run();
