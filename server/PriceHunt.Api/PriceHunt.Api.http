@@ -1,0 +1,6 @@
+@PriceHunt.Api_HostAddress = http://localhost:5147
+
+GET {{PriceHunt.Api_HostAddress}}/health
+Accept: application/json
+
+###
