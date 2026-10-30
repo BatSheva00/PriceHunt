@@ -1,0 +1,15 @@
+.results {
+  padding: 0;
+  overflow: hidden;
+}
+
+.results-head {
+  height: 44px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: #fafafc;
+  border-bottom: 1px solid var(--line);
+}

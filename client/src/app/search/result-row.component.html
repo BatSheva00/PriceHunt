@@ -1,0 +1,20 @@
+<div class="row grid-row" [class.row-pending]="row.status === 'pending'">
+  <span class="cell sup">
+    <span class="name">{{ row.supplier }}</span>
+    @if (cheapest && row.status === 'Success') {
+      <span class="tag">Cheapest</span>
+    }
+  </span>
+
+  <span class="cell price">
+    @if (row.price !== null) {
+      {{ row.price | number: '1.2-2' }}<small> ILS</small>
+    } @else {
+      <span class="muted">—</span>
+    }
+  </span>
+
+  <span class="cell status">
+    <app-status-badge [status]="row.status" />
+  </span>
+</div>

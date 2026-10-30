@@ -1,0 +1,55 @@
+.row {
+  height: var(--row-h);
+  border-bottom: 1px solid #f2f2f7;
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.row-pending {
+  background: #fcfcfd;
+}
+
+.cell {
+  min-width: 0;
+  font-size: 14px;
+}
+
+.sup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.sup .name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tag {
+  padding: 2px 7px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--ok);
+  background: var(--ok-soft);
+  border-radius: 5px;
+}
+
+.price {
+  font-family: var(--mono);
+  font-size: 14.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.price small {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted);
+}

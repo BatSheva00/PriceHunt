@@ -1,0 +1,17 @@
+<div class="card results">
+  <div class="results-head grid-row">
+    <span>Supplier</span>
+    <span class="ta-right">Price</span>
+    <span class="status-head">Status</span>
+  </div>
+
+  <div class="rows">
+    @for (row of rows; track row.supplier) {
+      <app-result-row
+        [row]="row"
+        [cheapest]="row.supplier === cheapestSupplier"
+        [attr.data-supplier]="row.supplier"
+      />
+    }
+  </div>
+</div>

@@ -1,0 +1,98 @@
+<section class="page">
+  <header class="page-head">
+    <div>
+      <h1>Live shipping quotes</h1>
+      <p class="muted">Seven suppliers, one search. Each price appears the moment that supplier answers.</p>
+    </div>
+    @if (state.finalStatus(); as status) {
+      <app-status-badge [status]="status" />
+    }
+  </header>
+
+  <form class="card" [formGroup]="form" (ngSubmit)="submit()">
+    <div class="grid-4">
+      <app-place-field label="From" formControlName="fromLocation" placeholder="Tel Aviv" />
+      <app-place-field label="To" formControlName="toLocation" placeholder="Haifa" />
+      <label class="field">
+        <span>Pickup date</span>
+        <input type="date" formControlName="fromDate" />
+      </label>
+      <label class="field">
+        <span>Delivery date</span>
+        <input type="date" formControlName="toDate" />
+      </label>
+    </div>
+
+    <div class="suppliers">
+      <div class="suppliers-head">
+        <span class="label">
+          @if (suppliersLoading()) {
+            Suppliers
+          } @else {
+            Suppliers ({{ selected().length }} of {{ suppliers().length }})
+          }
+        </span>
+        @if (!suppliersLoading() && !suppliersError()) {
+          <div class="supplier-actions">
+            <button type="button" class="link" (click)="selectAll()">Select all</button>
+            <button type="button" class="link" (click)="clearAll()">Clear</button>
+          </div>
+        }
+      </div>
+      @if (suppliersLoading()) {
+        <p class="muted">Loading suppliers…</p>
+      } @else if (suppliersError()) {
+        <p class="error">{{ suppliersError() }}</p>
+      } @else {
+        <div class="chips">
+          @for (supplier of suppliers(); track supplier) {
+            <button
+              type="button"
+              class="chip"
+              [class.chip-on]="selectedSet().has(supplier)"
+              (click)="toggle(supplier)"
+            >
+              <span class="dot"></span>{{ supplier }}
+            </button>
+          }
+        </div>
+      }
+    </div>
+
+    @if (formError(); as message) {
+      <p class="error">{{ message }}</p>
+    }
+
+    <div class="actions">
+      <button type="submit" class="btn btn-primary" [disabled]="suppliers().length === 0">
+        Search prices
+      </button>
+      @if (state.isRunning()) {
+        <button type="button" class="btn" (click)="cancel()">Cancel search</button>
+      }
+    </div>
+  </form>
+
+  @if (state.errorMessage(); as message) {
+    <div class="card error">{{ message }}</div>
+  }
+
+  @if (state.rows().length > 0) {
+    <div class="progress card">
+      <span class="progress-text">
+        <strong>{{ state.responded() }} of {{ state.total() }}</strong> suppliers responded
+      </span>
+      <div class="bar">
+        <div class="bar-fill" [style.width.%]="progressPercent()"></div>
+      </div>
+      @if (state.isRunning()) {
+        <span class="pulse">Streaming</span>
+      }
+      @if (state.durationMs(); as duration) {
+        <span class="progress-text">{{ duration }} ms total</span>
+      }
+    </div>
+
+    <app-results-list [rows]="state.sortedRows()" />
+  }
+</section>

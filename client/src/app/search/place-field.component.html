@@ -1,0 +1,25 @@
+<label class="field">
+  <span>{{ label }}</span>
+  <input
+    type="text"
+    [value]="query()"
+    [placeholder]="placeholder"
+    (input)="onInput($event)"
+    (blur)="blur()"
+    autocomplete="off"
+  />
+  @if (matches().length > 0) {
+    <ul class="places">
+      @for (place of matches(); track place.id) {
+        <li>
+          <button type="button" (mousedown)="$event.preventDefault()" (click)="choose(place)">
+            {{ place.name }}
+          </button>
+        </li>
+      }
+    </ul>
+  }
+  @if (error(); as message) {
+    <small class="error">{{ message }}</small>
+  }
+</label>
