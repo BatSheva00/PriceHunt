@@ -13,20 +13,17 @@ public sealed class SearchService : ISearchService
 {
     private readonly PriceHuntDbContext _db;
     private readonly SupplierCatalog _catalog;
-    private readonly IPlaceService _places;
     private readonly SearchOrchestrator _orchestrator;
     private readonly SearchStreamGate _streams;
 
     public SearchService(
         PriceHuntDbContext db,
         SupplierCatalog catalog,
-        IPlaceService places,
         SearchOrchestrator orchestrator,
         SearchStreamGate streams)
     {
         _db = db;
         _catalog = catalog;
-        _places = places;
         _orchestrator = orchestrator;
         _streams = streams;
     }
@@ -41,11 +38,9 @@ public sealed class SearchService : ISearchService
         var from = body.FromLocation?.Trim() ?? string.Empty;
         var to = body.ToLocation?.Trim() ?? string.Empty;
 
-        if (from.Length == 0 || to.Length == 0 ||
-            !await _places.ExistsAsync(from, CancellationToken.None) ||
-            !await _places.ExistsAsync(to, CancellationToken.None))
+        if (!IsPlaceName(from) || !IsPlaceName(to))
         {
-            return (null, new SearchRejection(StatusCodes.Status400BadRequest, "Choose a pickup and a delivery city from the list."));
+            return (null, new SearchRejection(StatusCodes.Status400BadRequest, "Enter a pickup and a delivery place."));
         }
 
         if (body.FromDate == default || body.ToDate == default)
@@ -146,4 +141,6 @@ public sealed class SearchService : ISearchService
 
         return null;
     }
+
+    private static bool IsPlaceName(string name) => name.Length is >= 2 and <= 80;
 }

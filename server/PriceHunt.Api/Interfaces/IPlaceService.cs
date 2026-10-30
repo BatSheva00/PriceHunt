@@ -5,6 +5,4 @@ namespace PriceHunt.Api.Interfaces;
 public interface IPlaceService
 {
     Task<IReadOnlyList<PlaceDto>> SearchAsync(string? query, CancellationToken cancellationToken);
-
-    Task<bool> ExistsAsync(string name, CancellationToken cancellationToken);
 }

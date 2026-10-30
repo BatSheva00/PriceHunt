@@ -13,9 +13,12 @@ public sealed class PlaceService : IPlaceService
 
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
+    private static readonly TimeSpan CatalogRetryAfter = TimeSpan.FromSeconds(30);
+
     private readonly IHttpClientFactory _http;
     private readonly SemaphoreSlim _gate = new(1, 1);
     private IReadOnlyList<City>? _cities;
+    private DateTimeOffset? _retryAfter;
 
     public PlaceService(IHttpClientFactory http) => _http = http;
 
@@ -39,12 +42,6 @@ public sealed class PlaceService : IPlaceService
             .ToArray();
     }
 
-    public async Task<bool> ExistsAsync(string name, CancellationToken cancellationToken)
-    {
-        var cities = await LoadAsync(cancellationToken);
-        return cities.Any(city => string.Equals(city.Name, name, StringComparison.OrdinalIgnoreCase));
-    }
-
     private async Task<IReadOnlyList<City>> LoadAsync(CancellationToken cancellationToken)
     {
         if (_cities is not null)
@@ -60,36 +57,58 @@ public sealed class PlaceService : IPlaceService
                 return _cities;
             }
 
-            var client = _http.CreateClient("places");
-            var url = FirstPage;
-            var cities = new List<City>();
-
-            for (var page = 0; page < 5 && !string.IsNullOrEmpty(url); page++)
+            if (_retryAfter is DateTimeOffset retryAfter && retryAfter > DateTimeOffset.UtcNow)
             {
-                var body = await client.GetFromJsonAsync<GovPage>(url, Json, cancellationToken);
-                var result = body?.Result;
-                if (body is not { Success: true } || result is null)
-                {
-                    throw new InvalidOperationException("The city list could not be loaded.");
-                }
-
-                cities.AddRange(result.Records.Select(ToCity).OfType<City>());
-                if (cities.Count >= result.Total)
-                {
-                    break;
-                }
-
-                url = result.Links?.Next ?? string.Empty;
+                throw new HttpRequestException("The city list is temporarily unavailable.");
             }
 
-            _cities = cities;
-            return _cities;
+            try
+            {
+                var client = _http.CreateClient("places");
+                var url = FirstPage;
+                var cities = new List<City>();
+
+                for (var page = 0; page < 5 && !string.IsNullOrEmpty(url); page++)
+                {
+                    var body = await client.GetFromJsonAsync<GovPage>(url, Json, cancellationToken);
+                    var result = body?.Result;
+                    if (body is not { Success: true } || result is null)
+                    {
+                        throw new InvalidOperationException("The city list could not be read.");
+                    }
+
+                    cities.AddRange(result.Records.Select(ToCity).OfType<City>());
+                    if (cities.Count >= result.Total)
+                    {
+                        break;
+                    }
+
+                    url = result.Links?.Next ?? string.Empty;
+                }
+
+                if (cities.Count == 0)
+                {
+                    throw new InvalidOperationException("The city list could not be read.");
+                }
+
+                _cities = cities;
+                _retryAfter = null;
+                return _cities;
+            }
+            catch (Exception exception) when (IsCatalogFailure(exception) && !cancellationToken.IsCancellationRequested)
+            {
+                _retryAfter = DateTimeOffset.UtcNow.Add(CatalogRetryAfter);
+                throw;
+            }
         }
         finally
         {
             _gate.Release();
         }
     }
+
+    private static bool IsCatalogFailure(Exception exception) =>
+        exception is HttpRequestException or TaskCanceledException or JsonException or InvalidOperationException;
 
     private static City? ToCity(GovRecord record)
     {

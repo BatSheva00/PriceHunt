@@ -16,7 +16,7 @@ builder.Services.AddHttpClient("places", client =>
 {
     client.BaseAddress = new Uri("https://data.gov.il/");
     client.DefaultRequestHeaders.UserAgent.ParseAdd("PriceHunt/1.0");
-    client.Timeout = TimeSpan.FromSeconds(20);
+    client.Timeout = TimeSpan.FromSeconds(5);
 });
 builder.Services.AddSingleton<IPlaceService, PlaceService>();
 builder.Services.AddSingleton<SupplierCatalog>();

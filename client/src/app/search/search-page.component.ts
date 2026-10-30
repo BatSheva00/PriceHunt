@@ -75,8 +75,8 @@ export class SearchPageComponent implements OnInit {
     const fromLocation = value.fromLocation?.trim() ?? '';
     const toLocation = value.toLocation?.trim() ?? '';
 
-    if (fromLocation.length === 0 || toLocation.length === 0) {
-      this.formError.set('Choose a pickup and a delivery city from the list.');
+    if (!SearchPageComponent.isPlaceName(fromLocation) || !SearchPageComponent.isPlaceName(toLocation)) {
+      this.formError.set('Enter a pickup and a delivery place.');
       return;
     }
 
@@ -106,6 +106,10 @@ export class SearchPageComponent implements OnInit {
 
   async cancel(): Promise<void> {
     await this.state.cancel();
+  }
+
+  private static isPlaceName(name: string): boolean {
+    return name.length >= 2 && name.length <= 80;
   }
 
   /** Local ISO day: toISOString would shift the date for users behind UTC. */

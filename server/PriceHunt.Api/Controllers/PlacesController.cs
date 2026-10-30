@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using PriceHunt.Api.Dtos;
 using PriceHunt.Api.Interfaces;
 
 namespace PriceHunt.Api.Controllers;
@@ -13,6 +12,16 @@ public sealed class PlacesController : ControllerBase
     public PlacesController(IPlaceService places) => _places = places;
 
     [HttpGet]
-    public async Task<ActionResult<IReadOnlyList<PlaceDto>>> Get([FromQuery] string? q, CancellationToken cancellationToken) =>
-        Ok(await _places.SearchAsync(q, cancellationToken));
+    public async Task<IActionResult> Get([FromQuery] string? q, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return Ok(await _places.SearchAsync(q, cancellationToken));
+        }
+        catch (Exception exception) when (!cancellationToken.IsCancellationRequested
+                                          && exception is HttpRequestException or TaskCanceledException)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable);
+        }
+    }
 }

@@ -25,6 +25,8 @@ export class PlaceFieldComponent implements ControlValueAccessor, OnDestroy {
 
   private chosen: string | null = null;
   private timer: ReturnType<typeof setTimeout> | null = null;
+  private retry: ReturnType<typeof setTimeout> | null = null;
+  private suggestionsPausedUntil = 0;
   private request = 0;
   private onChange: (value: string) => void = () => undefined;
   private onTouched: () => void = () => undefined;
@@ -47,30 +49,38 @@ export class PlaceFieldComponent implements ControlValueAccessor, OnDestroy {
     if (this.timer) {
       clearTimeout(this.timer);
     }
+    this.clearRetry();
   }
 
   onInput(event: Event): void {
     const value = (event.target as HTMLInputElement).value;
     this.query.set(value);
-    this.error.set(null);
+    const query = value.trim();
+    this.onChange(query);
 
-    if (value.trim() === this.chosen) {
+    if (query === this.chosen) {
       this.matches.set([]);
+      this.error.set(null);
       return;
     }
 
     this.chosen = null;
-    this.onChange('');
     if (this.timer) {
       clearTimeout(this.timer);
     }
 
-    const query = value.trim();
     if (query.length === 0) {
       this.matches.set([]);
+      this.error.set(null);
       return;
     }
 
+    if (Date.now() < this.suggestionsPausedUntil) {
+      this.showSuggestionsPaused();
+      return;
+    }
+
+    this.error.set(null);
     this.timer = setTimeout(() => void this.search(query), 250);
   }
 
@@ -88,17 +98,49 @@ export class PlaceFieldComponent implements ControlValueAccessor, OnDestroy {
   }
 
   private async search(query: string): Promise<void> {
+    if (query.length === 0 || Date.now() < this.suggestionsPausedUntil) {
+      return;
+    }
+
     const current = ++this.request;
     try {
       const places = await this.api.places(query);
-      if (current === this.request && this.chosen === null) {
-        this.matches.set(places);
+      if (current !== this.request || this.query().trim() !== query) {
+        return;
       }
+
+      this.suggestionsPausedUntil = 0;
+      this.clearRetry();
+      this.matches.set(places);
+      this.error.set(null);
     } catch {
-      if (current === this.request) {
-        this.matches.set([]);
-        this.error.set('The city list could not be loaded.');
+      if (current !== this.request) {
+        return;
       }
+
+      this.suggestionsPausedUntil = Date.now() + 30_000;
+      this.showSuggestionsPaused();
+      this.scheduleRetry();
+    }
+  }
+
+  private showSuggestionsPaused(): void {
+    this.matches.set([]);
+    this.error.set('City suggestions are unavailable.');
+  }
+
+  private scheduleRetry(): void {
+    this.clearRetry();
+    this.retry = setTimeout(() => {
+      this.suggestionsPausedUntil = 0;
+      void this.search(this.query().trim());
+    }, 31_000);
+  }
+
+  private clearRetry(): void {
+    if (this.retry) {
+      clearTimeout(this.retry);
+      this.retry = null;
     }
   }
 }
