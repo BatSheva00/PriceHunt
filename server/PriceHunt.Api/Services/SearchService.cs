@@ -99,13 +99,28 @@ public sealed class SearchService : ISearchService
             return new SearchRejection(StatusCodes.Status409Conflict, "That search has no suppliers.");
         }
 
-        if (!_streams.TryEnter(id))
+        if (!_streams.TryEnter(id, out var cancelToken))
         {
             return new SearchRejection(StatusCodes.Status409Conflict, "That search is already streaming.");
         }
 
         try
         {
+            var current = await _db.SearchRuns.AsNoTracking()
+                .Where(record => record.Id == id)
+                .Select(record => (SearchStatus?)record.Status)
+                .FirstOrDefaultAsync(http.RequestAborted);
+
+            if (current is null)
+            {
+                return new SearchRejection(StatusCodes.Status404NotFound, "That search does not exist.");
+            }
+
+            if (current != SearchStatus.Running)
+            {
+                return new SearchRejection(StatusCodes.Status409Conflict, $"That search already finished ({current}).");
+            }
+
             SseWriter.Prepare(http.Response);
             await http.Response.StartAsync(http.RequestAborted);
 
@@ -115,7 +130,8 @@ public sealed class SearchService : ISearchService
                 suppliers,
                 sseEvent => writer.WriteAsync(sseEvent, http.RequestAborted),
                 _db,
-                http.RequestAborted);
+                http.RequestAborted,
+                cancelToken);
             return null;
         }
         finally
@@ -126,17 +142,22 @@ public sealed class SearchService : ISearchService
 
     public async Task<SearchRejection?> CancelAsync(Guid id)
     {
-        var run = await _db.SearchRuns.FirstOrDefaultAsync(record => record.Id == id);
-        if (run is null)
+        var exists = await _db.SearchRuns.AsNoTracking().AnyAsync(record => record.Id == id);
+        if (!exists)
         {
             return new SearchRejection(StatusCodes.Status404NotFound, "That search does not exist.");
         }
 
-        if (run.Status == SearchStatus.Running)
+        var finishedAt = DateTime.UtcNow;
+        var updated = await _db.SearchRuns
+            .Where(record => record.Id == id && record.Status == SearchStatus.Running)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(record => record.Status, SearchStatus.Cancelled)
+                .SetProperty(record => record.FinishedAt, finishedAt));
+
+        if (updated > 0)
         {
-            run.Status = SearchStatus.Cancelled;
-            run.FinishedAt ??= DateTime.UtcNow;
-            await _db.SaveChangesAsync();
+            _streams.Cancel(id);
         }
 
         return null;

@@ -1,6 +1,6 @@
 export type Phase = 'idle' | 'submitting' | 'streaming' | 'completed' | 'timed_out' | 'cancelled' | 'error';
 
-export type RowStatus = 'pending' | 'Success' | 'Failed' | 'Timeout' | 'NoResponse';
+export type RowStatus = 'pending' | 'Success' | 'Failed' | 'Timeout' | 'NoResponse' | 'Cancelled';
 
 export interface ResultRow {
   supplier: string;

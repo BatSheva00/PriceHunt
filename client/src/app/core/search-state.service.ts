@@ -109,6 +109,10 @@ export class SearchStateService {
     this.stopActiveStream();
     this.phase.set('cancelled');
     this.finalStatus.set('Cancelled');
+    // The abort drops run_completed. Rows still waiting are finished on screen only.
+    this.rows.update(rows =>
+      rows.map(row => (row.status === 'pending' ? { ...row, status: 'Cancelled' as const } : row))
+    );
 
     if (!searchId) {
       return;
