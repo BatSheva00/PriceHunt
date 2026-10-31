@@ -1,0 +1,116 @@
+<section class="page">
+  <header class="page-head">
+    <div>
+      <h1>Search history</h1>
+      <p class="muted">Every saved supplier response, filtered and sorted on the server.</p>
+    </div>
+  </header>
+
+  <form class="card" (submit)="apply($event)">
+    <div class="grid-4">
+      <label class="field">
+        <span>From date</span>
+        <input type="date" name="from" [value]="from" (input)="from = valueOf($event)" />
+      </label>
+      <label class="field">
+        <span>To date</span>
+        <input type="date" name="to" [value]="to" (input)="to = valueOf($event)" />
+      </label>
+      <label class="field">
+        <span>Origin</span>
+        <input type="text" name="fromLocation" [value]="fromLocation" (input)="fromLocation = valueOf($event)" placeholder="Tel Aviv" />
+      </label>
+      <label class="field">
+        <span>Destination</span>
+        <input type="text" name="toLocation" [value]="toLocation" (input)="toLocation = valueOf($event)" placeholder="Haifa" />
+      </label>
+
+      <div class="field span-all">
+        <span>Suppliers ({{ selected().length === 0 ? 'all' : selected().length }})</span>
+        @if (suppliersError(); as message) {
+          <p class="error">{{ message }}</p>
+        } @else {
+          <div class="chips">
+            @for (supplier of suppliers(); track supplier) {
+              <button
+                type="button"
+                class="chip"
+                [class.chip-on]="selected().includes(supplier)"
+                (click)="toggle(supplier)"
+              >
+                <span class="dot"></span>{{ supplier }}
+              </button>
+            }
+          </div>
+        }
+      </div>
+    </div>
+
+    <div class="actions">
+      <button type="submit" class="btn btn-primary">Apply filters</button>
+      <button type="button" class="btn" (click)="reset()">Reset</button>
+    </div>
+  </form>
+
+  @if (errorMessage(); as message) {
+    <div class="card error">{{ message }}</div>
+  }
+
+  <div class="card table-card">
+    <div class="toolbar">
+      <span class="count">{{ result().total }} quotes</span>
+      @if (loading()) {
+        <span class="pulse">Loading</span>
+      }
+    </div>
+
+    <div class="scroll">
+      <table>
+        <thead>
+          <tr>
+            <th><button type="button" class="sort" (click)="sort('date')">Date {{ arrow('date') }}</button></th>
+            <th><button type="button" class="sort" (click)="sort('route')">Route {{ arrow('route') }}</button></th>
+            <th><button type="button" class="sort" (click)="sort('supplier')">Supplier {{ arrow('supplier') }}</button></th>
+            <th class="ta-right"><button type="button" class="sort ta-right" (click)="sort('price')">Price {{ arrow('price') }}</button></th>
+            <th class="ta-right"><button type="button" class="sort ta-right" (click)="sort('responseTime')">Response time {{ arrow('responseTime') }}</button></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of result().items; track row.id) {
+            <tr>
+              <td class="date">{{ stamp(row.date) | date: 'dd MMM yyyy, HH:mm' }}</td>
+              <td>{{ row.route }}</td>
+              <td>{{ row.supplier }}</td>
+              <td class="num">
+                @if (row.price !== null) {
+                  {{ row.price | number: '1.2-2' }}
+                } @else {
+                  <span class="muted">—</span>
+                }
+              </td>
+              <td class="num">{{ row.responseTimeMs }} ms</td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="5" class="empty">
+                @if (loading()) {
+                  Loading quotes…
+                } @else {
+                  No quotes match these filters.
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pager">
+      <span>Page {{ pageIndex }} of {{ totalPages() }}</span>
+      <div class="pages">
+        <button type="button" class="btn" (click)="go(pageIndex - 1)" [disabled]="pageIndex <= 1 || loading()">Previous</button>
+        <button type="button" class="btn" (click)="go(pageIndex + 1)" [disabled]="pageIndex >= totalPages() || loading()">Next</button>
+      </div>
+    </div>
+  </div>
+</section>

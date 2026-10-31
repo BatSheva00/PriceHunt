@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
-import { Place, SearchCreated, SearchFormValue } from './models';
+import { HistoryPage, HistoryQuery, Place, SearchCreated, SearchFormValue } from './models';
 
 const BASE = '/api';
 
@@ -16,6 +16,32 @@ export class ApiService {
 
   suppliers(): Promise<string[]> {
     return firstValueFrom(this.http.get<string[]>(`${BASE}/suppliers`));
+  }
+
+  history(query: HistoryQuery): Promise<HistoryPage> {
+    let params = new HttpParams()
+      .set('sortBy', query.sortBy)
+      .set('sortDir', query.sortDir)
+      .set('page', query.page)
+      .set('pageSize', query.pageSize);
+
+    if (query.from) {
+      params = params.set('from', query.from);
+    }
+    if (query.to) {
+      params = params.set('to', query.to);
+    }
+    if (query.fromLocation) {
+      params = params.set('fromLocation', query.fromLocation);
+    }
+    if (query.toLocation) {
+      params = params.set('toLocation', query.toLocation);
+    }
+    for (const supplier of query.suppliers) {
+      params = params.append('suppliers', supplier);
+    }
+
+    return firstValueFrom(this.http.get<HistoryPage>(`${BASE}/history`, { params }));
   }
 
   places(query: string): Promise<Place[]> {

@@ -52,3 +52,33 @@ export interface RunCompletedEvent {
   total: number;
   durationMs: number;
 }
+
+export interface HistoryRow {
+  id: string;
+  date: string;
+  route: string;
+  supplier: string;
+  price: number | null;
+  responseTimeMs: number;
+}
+
+export interface HistoryPage {
+  items: HistoryRow[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export type SortKey = 'date' | 'route' | 'supplier' | 'price' | 'responseTime';
+
+export interface HistoryQuery {
+  from: string;
+  to: string;
+  fromLocation: string;
+  toLocation: string;
+  suppliers: string[];
+  sortBy: SortKey;
+  sortDir: 'asc' | 'desc';
+  page: number;
+  pageSize: number;
+}
