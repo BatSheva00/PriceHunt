@@ -1,9 +1,11 @@
 import { Component, Input } from '@angular/core';
 
 const LABELS: Record<string, string> = {
+  pending: 'Pending',
+  Success: 'Completed',
   Failed: 'Failed',
   Timeout: 'Timed out',
-  NoResponse: 'Never responds',
+  NoResponse: 'Timed out',
   Completed: 'Completed',
   TimedOut: 'Timed out',
   Cancelled: 'Cancelled'
