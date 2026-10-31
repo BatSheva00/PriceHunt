@@ -1,0 +1,44 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "API: attach",
+            "type": "coreclr",
+            "request": "attach",
+            "processId": "${command:pickProcess}"
+        },
+        {
+            "name": "API: launch",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build-api",
+            "program": "${workspaceFolder}/server/PriceHunt.Api/bin/Debug/net8.0/PriceHunt.Api.dll",
+            "cwd": "${workspaceFolder}/server/PriceHunt.Api",
+            "console": "integratedTerminal",
+            "stopAtEntry": false,
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development",
+                "ASPNETCORE_URLS": "http://localhost:5147"
+            }
+        },
+        {
+            "name": "Client: Chrome",
+            "type": "chrome",
+            "request": "launch",
+            "url": "http://localhost:4200/",
+            "webRoot": "${workspaceFolder}/client",
+            "sourceMaps": true,
+            "sourceMapPathOverrides": {
+                "webpack:///./src/*": "${webRoot}/src/*",
+                "webpack:///src/*": "${webRoot}/src/*"
+            }
+        }
+    ],
+    "compounds": [
+        {
+            "name": "API + Client",
+            "configurations": ["API: launch", "Client: Chrome"],
+            "stopAll": true
+        }
+    ]
+}

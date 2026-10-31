@@ -33,7 +33,7 @@ app.UseExceptionHandler();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<PriceHuntDbContext>();
-    await db.Database.EnsureCreatedAsync();
+    await db.Database.MigrateAsync();
     await SearchOrchestrator.MarkOrphanedRunsAsync(db);
 }
 
@@ -41,3 +41,7 @@ app.UseCors();
 app.MapControllers();
 
 app.Run();
+
+public partial class Program
+{
+}
