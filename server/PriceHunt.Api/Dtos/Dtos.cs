@@ -18,3 +18,13 @@ public sealed record QuoteDto(string Supplier, decimal Price, int ResponseTimeMs
 public sealed record ProgressDto(int Responded, int Total);
 
 public sealed record RunCompletedDto(string Status, int Responded, int Total, long DurationMs);
+
+public sealed record HistoryRowDto(
+    Guid Id,
+    DateTime Date,
+    string Route,
+    string Supplier,
+    decimal? Price,
+    int ResponseTimeMs);
+
+public sealed record HistoryPageDto(IReadOnlyList<HistoryRowDto> Items, int Total, int Page, int PageSize);
