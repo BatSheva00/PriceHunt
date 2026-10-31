@@ -7,6 +7,13 @@ using PriceHunt.Api.Suppliers;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Render injects PORT. Local `dotnet run` does not, and keeps the launch profile URL.
+var port = Environment.GetEnvironmentVariable("PORT");
+if (!string.IsNullOrWhiteSpace(port))
+{
+    builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+}
+
 var connectionString = builder.Configuration.GetConnectionString("Default") ?? "Data Source=pricehunt.db";
 
 builder.Services.AddControllers();
@@ -38,7 +45,31 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.UseCors();
+
+var indexFile = Path.Combine(app.Environment.WebRootPath ?? string.Empty, "index.html");
+var serveClient = File.Exists(indexFile);
+if (serveClient)
+{
+    app.UseDefaultFiles();
+    app.UseStaticFiles();
+}
+
 app.MapControllers();
+
+if (serveClient)
+{
+    app.MapFallback(async context =>
+    {
+        if (context.Request.Path.StartsWithSegments("/api"))
+        {
+            context.Response.StatusCode = StatusCodes.Status404NotFound;
+            return;
+        }
+
+        context.Response.ContentType = "text/html; charset=utf-8";
+        await context.Response.SendFileAsync(indexFile);
+    });
+}
 
 app.Run();
 
