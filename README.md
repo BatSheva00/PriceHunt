@@ -1,5 +1,9 @@
 # PriceHunt
 
+[Live demo](https://pricehunt-0zw1.onrender.com)
+
+The live demo runs on Render Free. The first visit after idle time can be slow, and SQLite demo data can reset after a restart or redeployment.
+
 PriceHunt compares simulated shipping quotes. A user picks an origin, a destination, a date range, and one or more suppliers. The API asks those suppliers at the same time and streams each answer to the browser as soon as it is ready. Every search and every supplier response is stored and can be filtered on the history screen.
 
 The repository has two projects: an ASP.NET Core Web API in `server/PriceHunt.Api` and an Angular app in `client`. Suppliers are simulated inside the API. Search does not call a live shipping network.
